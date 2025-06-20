@@ -1,1 +1,21 @@
-import subprocessimport timedef generate_dockerfile(template_path="Dockerfile.template", output_path="Dockerfile"):    with open(template_path, "r") as template:        content = template.read()    with open(output_path, "w") as dockerfile:        dockerfile.write(content)    print("[Docker] Dockerfile generated.")def build_docker_image(image_name):    cmd = f"sudo docker build -t {image_name} ."    print(f"[Docker] Building image with command: {cmd}")    subprocess.run(cmd, shell=True, check=True)def run_docker_container(image_name, container_name, port):    cmd = f"sudo docker run -d -p {port}:{port} --name {container_name} {image_name}"    print(f"[Docker] Running container with command: {cmd}")    subprocess.run(cmd, shell=True, check=True)    print("[Docker] Waiting for MySQL to initialize...")    time.sleep(60)
+import subprocess
+import time
+
+def generate_dockerfile(template_path="Dockerfile.template", output_path="Dockerfile"):
+    with open(template_path, "r") as template:
+        content = template.read()
+    with open(output_path, "w") as dockerfile:
+        dockerfile.write(content)
+    print("[Docker] Dockerfile generated.")
+
+def build_docker_image(image_name):
+    cmd = f"sudo docker build -t {image_name} ."
+    print(f"[Docker] Building image with command: {cmd}")
+    subprocess.run(cmd, shell=True, check=True)
+
+def run_docker_container(image_name, container_name, port):
+    cmd = f"sudo docker run -d -p {port}:{port} --name {container_name} {image_name}"
+    print(f"[Docker] Running container with command: {cmd}")
+    subprocess.run(cmd, shell=True, check=True)
+    print("[Docker] Waiting for MySQL to initialize...")
+    time.sleep(60)

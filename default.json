@@ -1,1 +1,11 @@
-{    "image_name": "my_mysql",    "container_name": "my_mysql_container",    "port": 3306,    "root_password": "12345678",    "sql_script_path": "/home/vm/run.sql",    "sqlancer_threads": 4,    "sqlancer_timeout": 60,    "sqlancer_jar": "../sqlancer-2.0.0.jar"  }  
+{
+  "image_name": "my_mysql",
+  "container_name": "my_mysql_container",
+  "port": 3306,
+  "root_password": "12345678",
+  "sql_script_path": "/home/vm/run.sql",
+  "sqlancer_threads": 4,
+  "sqlancer_timeout": 60,
+  "sqlancer_jar": "../sqlancer-2.0.0.jar"
+}
+  
