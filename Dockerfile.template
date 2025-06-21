@@ -1,0 +1,22 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y default-jdk maven git jq {{DBMS_PACKAGE}} && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /var/run/mysqld && chown -R mysql:mysql /var/run/mysqld || true
+RUN mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql || true
+
+WORKDIR /root
+
+COPY entrypoint.sh /root/entrypoint.sh
+COPY sqlancer_runner.sh /root/sqlancer_runner.sh
+COPY init_schema.sql /root/init_schema.sql
+COPY config.json /root/config.json
+COPY db_init/ /root/db_init/
+
+RUN chmod +x /root/entrypoint.sh /root/sqlancer_runner.sh /root/db_init/*.sh
+
+CMD ["/root/entrypoint.sh"]

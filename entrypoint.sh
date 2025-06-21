@@ -19,5 +19,4 @@ case "$DBMS" in
     ;;
 esac
 
-# 启动 SQLancer 测试
 bash /root/sqlancer_runner.sh
