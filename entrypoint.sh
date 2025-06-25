@@ -1,22 +1,39 @@
 #!/bin/bash
 set -e
 
-CONFIG_PATH="/root/config.json"
-DBMS=$(jq -r '.dbms' "$CONFIG_PATH")
+DBMS="${DBMS:-mysql}"
+VERSION="${VERSION:-8.0}"
+SQLANCER_THREADS="${SQLANCER_THREADS:-4}"
+SQLANCER_TIMEOUT="${SQLANCER_TIMEOUT:-60}"
+SQLANCER_ORACLE="${SQLANCER_ORACLE:-FUZZER}"
+SQLANCER_USERNAME="${SQLANCER_USERNAME:-root}"
+SQLANCER_PASSWORD="${SQLANCER_PASSWORD:-12345678}"
 
-echo "[BOOT] Selected DBMS: $DBMS"
+echo "=== [BOOT] Selected DBMS: $DBMS ==="
 
-case "$DBMS" in
-  mysql)
-    bash /root/db_init/start_mysql.sh
-    ;;
-  postgres)
-    bash /root/db_init/start_postgres.sh
-    ;;
-  *)
-    echo "[ERROR] Unsupported DBMS: $DBMS"
-    exit 1
-    ;;
-esac
+export PYTHONPATH=/root
 
-bash /root/sqlancer_runner.sh
+# init db
+python3 - <<PYCODE
+import os
+dbms = os.environ["DBMS"]
+password = os.environ["SQLANCER_PASSWORD"]
+mod = __import__(f"{dbms}.docker_ops", fromlist=["init"])
+mod.init(password)
+PYCODE
+
+echo "[SQLANCER] Cloning SQLancer..."
+git clone https://github.com/sqlancer/sqlancer.git
+cd sqlancer
+mvn package -DskipTests
+
+echo "[SQLancer] Running test with command:"
+echo "java -jar target/sqlancer-*.jar --num-threads $SQLANCER_THREADS --timeout-seconds $SQLANCER_TIMEOUT --username $SQLANCER_USERNAME --password $SQLANCER_PASSWORD $DBMS --oracle $SQLANCER_ORACLE"
+
+java -jar target/sqlancer-*.jar \
+  --num-threads "$SQLANCER_THREADS" \
+  --timeout-seconds "$SQLANCER_TIMEOUT" \
+  --username "$SQLANCER_USERNAME" \
+  --password "$SQLANCER_PASSWORD" \
+  "$DBMS" \
+  --oracle "$SQLANCER_ORACLE"

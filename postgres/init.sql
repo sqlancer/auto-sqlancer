@@ -1,0 +1,6 @@
+-- postgres/init.sql
+
+CREATE DATABASE test;
+ALTER USER postgres WITH PASSWORD '12345678';
+ALTER USER postgres WITH SUPERUSER;
+GRANT ALL PRIVILEGES ON DATABASE test_db TO postgres;
