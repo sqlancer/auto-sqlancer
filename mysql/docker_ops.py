@@ -28,12 +28,6 @@ def init(sql_password: str):
     subprocess.run("service mysql start", shell=True, check=True)
     print("[MYSQL] Setting root password...")
     
-    subprocess.run(
-        f"mysql -u root <<EOF\n"
-        f"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{sql_password}';\n"
-        f"FLUSH PRIVILEGES;\n"
-        f"EOF", shell=True, check=True
-    )
     init_sql = "/db_init/init.sql"
     if os.path.exists(init_sql):
         print("[MYSQL] Executing init.sql...")
