@@ -1,10 +1,12 @@
 {
   "dbms": "mysql",
-  "oracle": "FUZZER",
-  "username": "root",
-  "password": "12345678",
-  "host": "127.0.0.1",
-  "port": 3306,
+  "version": "8.0",
   "num_threads": 4,
-  "timeout_seconds": 60
+  "timeout_seconds": 60,
+  "oracle": "FUZZER",
+  "password": "12345678",
+  "versions": {
+    "mysql": "8.0",
+    "postgres": "13"
+  }
 }
