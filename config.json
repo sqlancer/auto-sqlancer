@@ -1,6 +1,4 @@
 {
-  "dbms": "mysql",
-  "version": "8.0",
   "num_threads": 4,
   "timeout_seconds": 60,
   "oracle": "FUZZER",
@@ -8,5 +6,9 @@
   "versions": {
     "mysql": "8.0",
     "postgres": "13"
+  },
+  "usernames": {
+    "mysql": "root",
+    "postgres": "postgres"
   }
 }
