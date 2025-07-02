@@ -1,14 +1,3 @@
 {
-  "num_threads": 4,
-  "timeout_seconds": 60,
-  "oracle": "FUZZER",
-  "password": "12345678",
-  "versions": {
-    "mysql": "8.0",
-    "postgres": "13"
-  },
-  "usernames": {
-    "mysql": "root",
-    "postgres": "postgres"
-  }
+  "dbms_list": ["mysql", "postgres"]
 }
