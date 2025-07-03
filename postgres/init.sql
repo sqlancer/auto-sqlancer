@@ -1,6 +1,5 @@
--- postgres/init.sql
-
+-- Sample init SQL for postgres
 CREATE DATABASE test;
-ALTER USER postgres WITH PASSWORD '12345678';
-ALTER USER postgres WITH SUPERUSER;
-GRANT ALL PRIVILEGES ON DATABASE test_db TO postgres;
+\connect test
+CREATE TABLE t0(c0 SERIAL PRIMARY KEY, c1 TEXT);
+INSERT INTO t0(c1) VALUES ('foo'), ('bar');

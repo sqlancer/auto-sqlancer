@@ -1,6 +1,5 @@
--- mysql/init.sql
-
-CREATE DATABASE IF NOT EXISTS test_db;
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '12345678';
-SELECT host, user FROM mysql.user;
-FLUSH PRIVILEGES;
+-- Sample initialization for testing
+CREATE DATABASE testdb;
+USE testdb;
+CREATE TABLE t0(c0 INT PRIMARY KEY, c1 VARCHAR(20));
+INSERT INTO t0 VALUES (1,'hello'), (2,'world');

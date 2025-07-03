@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  mysql-8-0:
+    image: mysql:8.0
+    container_name: mysql-8-0
+    environment:
+      MYSQL_ROOT_PASSWORD: "12345678"
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p12345678"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-13:
+    image: postgres:13
+    container_name: postgres-13
+    environment:
+      POSTGRES_PASSWORD: "12345678"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  sqlancer:
+    build:
+      context: ./sqlancer
+    container_name: sqlancer-test
+    depends_on:
+      mysql-8-0:
+        condition: service_healthy
+      postgres-13:
+        condition: service_healthy
+    environment:
+      DBMS_LIST: "mysql:8.0,postgres:13"
+    command: ["/root/entrypoint.sh"]

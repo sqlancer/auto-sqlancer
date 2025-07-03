@@ -10,28 +10,27 @@ def load_json(path):
         return json.load(f)
 
 def run_docker_build(dbms, version):
-    image = f"sqlancer-auto-{dbms}-{version.replace('.', '-')}"
-    print(f"=== [STEP] Generating Dockerfile for {dbms}:{version} ===")
+    image = f"{dbms}-{version.replace('.', '-')}"
+    print(f"[INFO] Building image for {dbms}:{version}")
     subprocess.run(["python3", "generate_dockerfile.py", dbms, version], check=True)
-    print(f"=== [STEP] Building image: {image} ===")
-    subprocess.run(["sudo", "docker", "build", "-t", image, "."], check=True)
-    print(f"=== [STEP] Pulling DBMS image: {dbms}:{version} ===")
-    subprocess.run(["python3", "-c", f"import {dbms}.docker_ops as db; db.pull_docker_image('{version}')"], check=True)
+    subprocess.run(["sudo", "docker", "build", "-t", image, ".", "--build-arg", f"VERSION={version}"], check=True)
+    subprocess.run(["python3", "-c",
+        f"import {dbms}.docker_ops as db; db.pull_docker_image('{version}')"], check=True)
     return image
 
-def run_test(dbms, version, threads, timeout, oracle, username, password):
-    image = run_docker_build(dbms, version)
-    print(f"=== [INFO] Running SQLancer test for {dbms}:{version} ===")
+def run_test(dbms, cfg):
+    image = f"{dbms}-{cfg['version'].replace('.', '-')}"
+    print(f"[INFO] Running test for {dbms}:{cfg['version']}")
     subprocess.run([
-        "sudo", "docker", "run", "--rm",
+        "sudo", "docker", "compose", "run", "--rm", "--name", f"{dbms}-sqlancer",
         "-e", f"DBMS={dbms}",
-        "-e", f"VERSION={version}",
-        "-e", f"SQLANCER_THREADS={threads}",
-        "-e", f"SQLANCER_TIMEOUT={timeout}",
-        "-e", f"SQLANCER_ORACLE={oracle}",
-        "-e", f"SQLANCER_USERNAME={username}",
-        "-e", f"SQLANCER_PASSWORD={password}",
-        image
+        "-e", f"VERSION={cfg['version']}",
+        "-e", f"SQLANCER_THREADS={cfg['num_threads']}",
+        "-e", f"SQLANCER_TIMEOUT={cfg['timeout_seconds']}",
+        "-e", f"SQLANCER_ORACLE={cfg['oracle']}",
+        "-e", f"SQLANCER_USERNAME={cfg['username']}",
+        "-e", f"SQLANCER_PASSWORD={cfg['password']}",
+        "sqlancer"
     ], check=True)
 
 def main():
@@ -39,23 +38,23 @@ def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="mode")
 
-    # python3 test.py test-db [DBMS] [--version VERSION] [--num-threads N] [--timeout-seconds T] [--oracle ORACLE] [--username USER] [--password PASS]
+    # test-db command
     p1 = sub.add_parser("test-db")
-    p1.add_argument("dbms", help="Which DBMS to test")
-    p1.add_argument("--version", required=False, help="DBMS version, override config")
-    p1.add_argument("--num-threads", type=int, help="SQLancer threads")
-    p1.add_argument("--timeout-seconds", type=int, help="SQLancer timeout")
-    p1.add_argument("--oracle", help="SQLancer oracle")
-    p1.add_argument("--username", help="DB username")
-    p1.add_argument("--password", help="DB password")
+    p1.add_argument("dbms")
+    p1.add_argument("--version", required=True)
+    p1.add_argument("--num-threads", type=int)
+    p1.add_argument("--timeout-seconds", type=int)
+    p1.add_argument("--oracle")
+    p1.add_argument("--username")
+    p1.add_argument("--password")
 
-    # python3 test.py test-all
+    # test-all command
     sub.add_parser("test-all")
 
-    # python3 test.py docker [DBMS] [--version VERSION] 
+    # docker build command
     p3 = sub.add_parser("docker")
-    p3.add_argument("dbms", help="Which DBMS to build image for")
-    p3.add_argument("--version", required=False, help="DBMS version override")
+    p3.add_argument("dbms")
+    p3.add_argument("--version", required=True)
 
     args = parser.parse_args()
 
@@ -63,30 +62,26 @@ def main():
         if args.dbms not in glob["dbms_list"]:
             raise ValueError(f"Unknown DBMS: {args.dbms}")
         cfg = load_json(os.path.join(args.dbms, "config.json"))
-        ver = args.version or cfg["version"]
-        threads = args.num_threads or cfg.get("num_threads")
-        timeout = args.timeout_seconds or cfg.get("timeout_seconds")
-        oracle = args.oracle or cfg.get("oracle")
-        username = args.username or cfg.get("username")
-        password = args.password or cfg.get("password")
-        run_test(args.dbms, ver, threads, timeout, oracle, username, password)
+        cfg["version"] = args.version
+        if args.num_threads: cfg["num_threads"] = args.num_threads
+        if args.timeout_seconds: cfg["timeout_seconds"] = args.timeout_seconds
+        if args.oracle: cfg["oracle"] = args.oracle
+        if args.username: cfg["username"] = args.username
+        if args.password: cfg["password"] = args.password
+        run_test(args.dbms, cfg)
 
     elif args.mode == "test-all":
         for db in glob["dbms_list"]:
-            cfgpath = os.path.join(db, "config.json")
-            if os.path.exists(cfgpath):
-                cfg = load_json(cfgpath)
-                run_test(db, cfg["version"], cfg["num_threads"], cfg["timeout_seconds"],
-                         cfg["oracle"], cfg["username"], cfg["password"])
+            path = os.path.join(db, "config.json")
+            if os.path.exists(path):
+                run_test(db, load_json(path))
             else:
-                print(f"Skipped {db}: missing config.json")
+                print(f"[WARN] Skipped {db}: config.json not found.")
 
     elif args.mode == "docker":
         if args.dbms not in glob["dbms_list"]:
             raise ValueError(f"Unknown DBMS: {args.dbms}")
-        cfg = load_json(os.path.join(args.dbms, "config.json"))
-        ver = args.version or cfg["version"]
-        run_docker_build(args.dbms, ver)
+        run_docker_build(args.dbms, args.version)
 
     else:
         parser.print_help()
