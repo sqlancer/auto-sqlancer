@@ -10,7 +10,6 @@ def load_json(path):
         return json.load(f)
 
 def generate_env_file():
-    """从各数据库 config.json 生成 .env 文件供 docker-compose 使用"""
     glob = load_json(GLOBAL_CONFIG)
     env = {}
     for dbms in glob["dbms_list"]:
