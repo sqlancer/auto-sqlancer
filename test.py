@@ -9,13 +9,28 @@ def load_json(path):
     with open(path) as f:
         return json.load(f)
 
+def generate_env_file():
+    """从各数据库 config.json 生成 .env 文件供 docker-compose 使用"""
+    glob = load_json(GLOBAL_CONFIG)
+    env = {}
+    for dbms in glob["dbms_list"]:
+        cfg_path = os.path.join(dbms, "config.json")
+        if os.path.exists(cfg_path):
+            cfg = load_json(cfg_path)
+            env[f"{dbms.upper()}_VERSION"] = cfg["version"]
+            env[f"{dbms.upper()}_USERNAME"] = cfg["username"]
+            env[f"{dbms.upper()}_PASSWORD"] = cfg["password"]
+    with open(".env", "w") as f:
+        for k, v in env.items():
+            f.write(f"{k}={v}\n")
+    print("[INFO] Wrote .env:", env)
+
 def run_docker_build(dbms, version):
     image = f"{dbms}-{version.replace('.', '-')}"
     print(f"[INFO] Building image for {dbms}:{version}")
     subprocess.run(["python3", "generate_dockerfile.py", dbms, version], check=True)
     subprocess.run(["sudo", "docker", "build", "-t", image, ".", "--build-arg", f"VERSION={version}"], check=True)
-    subprocess.run(["python3", "-c",
-        f"import {dbms}.docker_ops as db; db.pull_docker_image('{version}')"], check=True)
+    subprocess.run(["python3", "-c", f"import {dbms}.docker_ops as db; db.pull_docker_image('{version}')"], check=True)
     return image
 
 def run_test(dbms, cfg):
@@ -68,9 +83,11 @@ def main():
         if args.oracle: cfg["oracle"] = args.oracle
         if args.username: cfg["username"] = args.username
         if args.password: cfg["password"] = args.password
+        generate_env_file()
         run_test(args.dbms, cfg)
 
     elif args.mode == "test-all":
+        generate_env_file()
         for db in glob["dbms_list"]:
             path = os.path.join(db, "config.json")
             if os.path.exists(path):
