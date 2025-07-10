@@ -4,6 +4,27 @@
     "password": "12345678",
     "num_threads": 2,
     "timeout_seconds": 120,
-    "oracle": "QUERY_PARTITIONING"
-}
+    "oracle": "QUERY_PARTITIONING",
+    "docker": {
+      "image": "postgres:${VERSION}",
+      "container_name": "${TAG}",
+      "env_file": ".env",
+      "environment": {
+        "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD}"
+      },
+      "volumes": [
+        "./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql",
+        {
+          "type": "tmpfs",
+          "target": "/var/lib/postgresql/data"
+        }
+      ],
+      "healthcheck": {
+        "test": ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME}"],
+        "interval": "5s",
+        "timeout": "3s",
+        "retries": 5
+      }
+    }
+  }
   

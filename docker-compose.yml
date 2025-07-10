@@ -1,42 +1,7 @@
 services:
-  mysql:
-    image: mysql:${MYSQL_VERSION}
-    container_name: mysql
-    env_file: .env
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USERNAME}", "-p${MYSQL_PASSWORD}"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  postgres:
-    image: postgres:${POSTGRES_VERSION}
-    container_name: postgres
-    env_file: .env
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME}"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   sqlancer:
     build:
       context: ./sqlancer
     container_name: sqlancer-test
-    depends_on:
-      mysql:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
     env_file: .env
-    environment:
-      DBMS_LIST: "mysql:${MYSQL_VERSION},postgres:${POSTGRES_VERSION}"
     command: ["/root/entrypoint.sh"]

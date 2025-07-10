@@ -1,106 +1,109 @@
-import argparse
-import json
-import os
-import subprocess
+import argparse, json, os, subprocess, yaml, string
 
-GLOBAL_CONFIG = "config.json"
+GLOBAL = "config.json"
+OVERRIDE = "docker-compose.override.yml"
 
 def load_json(path):
-    with open(path) as f:
-        return json.load(f)
+    with open(path) as f: return json.load(f)
 
-def generate_env_file():
-    glob = load_json(GLOBAL_CONFIG)
+def build_service(db, cfg):
+    tag = f"{db}-{cfg['version']}"
+    env = {
+        "VERSION": cfg["version"],
+        db.upper() + "_USERNAME": cfg["username"],
+        db.upper() + "_PASSWORD": cfg["password"],
+        "TAG": tag
+    }
+    raw = json.dumps(cfg["docker"])
+    filled = string.Template(raw).safe_substitute(env)
+    return tag, json.loads(filled)
+
+def generate_env_and_override(selected, cfg_map):
     env = {}
-    for dbms in glob["dbms_list"]:
-        cfg_path = os.path.join(dbms, "config.json")
-        if os.path.exists(cfg_path):
-            cfg = load_json(cfg_path)
-            env[f"{dbms.upper()}_VERSION"] = cfg["version"]
-            env[f"{dbms.upper()}_USERNAME"] = cfg["username"]
-            env[f"{dbms.upper()}_PASSWORD"] = cfg["password"]
+    services = {}
+    for db in selected:
+        cfg = cfg_map[db]
+        tag, svc = build_service(db, cfg)
+        services[tag] = svc
+        # env entries
+        env[f"{db.upper()}_VERSION"] = cfg["version"]
+        env[f"{db.upper()}_USERNAME"] = cfg["username"]
+        env[f"{db.upper()}_PASSWORD"] = cfg["password"]
+
+    db0 = selected[0]
+    cfg0 = cfg_map[db0]
+    env["SQLANCER_THREADS"] = str(cfg0["num_threads"])
+    env["SQLANCER_TIMEOUT"] = str(cfg0["timeout_seconds"])
+    env["SQLANCER_ORACLE"] = cfg0["oracle"]
+    env["SQLANCER_USERNAME"] = cfg0["username"]
+    env["SQLANCER_PASSWORD"] = cfg0["password"]
+    env["SQLANCER_DBMS"] = db0
+    env["SQLANCER_HOST"] = f"{db0}-{cfg0['version']}"
+
+    # generate env file
     with open(".env", "w") as f:
         for k, v in env.items():
             f.write(f"{k}={v}\n")
-    print("[INFO] Wrote .env:", env)
+    print("[INFO] .env written:", env.keys())
 
-def run_docker_build(dbms, version):
-    image = f"{dbms}-{version.replace('.', '-')}"
-    print(f"[INFO] Building image for {dbms}:{version}")
-    subprocess.run(["python3", "generate_dockerfile.py", dbms, version], check=True)
-    subprocess.run(["sudo", "docker", "build", "-t", image, ".", "--build-arg", f"VERSION={version}"], check=True)
-    subprocess.run(["python3", "-c", f"import {dbms}.docker_ops as db; db.pull_docker_image('{version}')"], check=True)
-    return image
+    # add sqlancer service
+    services["sqlancer"] = {
+        "build": {"context": "./sqlancer"},
+        "container_name": "sqlancer",
+        "env_file": ".env",
+        "depends_on": [f"{db}-{cfg_map[db]['version']}" for db in selected],
+        "command": ["/root/entrypoint.sh"]
+    }
 
-def run_test(dbms, cfg):
-    image = f"{dbms}-{cfg['version'].replace('.', '-')}"
-    print(f"[INFO] Running test for {dbms}:{cfg['version']}")
+    with open(OVERRIDE, "w") as f:
+        yaml.dump({"services": services}, f, sort_keys=False)
+    print("[INFO] override generated for services:", list(services.keys()))
+
+def run_compose():
     subprocess.run([
-        "sudo", "docker", "compose", "run", "--rm", "--name", f"{dbms}-sqlancer",
-        "-e", f"DBMS={dbms}",
-        "-e", f"VERSION={cfg['version']}",
-        "-e", f"SQLANCER_THREADS={cfg['num_threads']}",
-        "-e", f"SQLANCER_TIMEOUT={cfg['timeout_seconds']}",
-        "-e", f"SQLANCER_ORACLE={cfg['oracle']}",
-        "-e", f"SQLANCER_USERNAME={cfg['username']}",
-        "-e", f"SQLANCER_PASSWORD={cfg['password']}",
-        "sqlancer"
+        "sudo", "docker", "compose", "-f", "docker-compose.yml", "-f", OVERRIDE,
+        "up", "--build", "--abort-on-container-exit", "--remove-orphans"
     ], check=True)
 
 def main():
-    glob = load_json(GLOBAL_CONFIG)
-    parser = argparse.ArgumentParser()
-    sub = parser.add_subparsers(dest="mode")
+    glob = load_json(GLOBAL)
+    p = argparse.ArgumentParser()
+    sub = p.add_subparsers(dest="mode")
 
-    # test-db command
-    p1 = sub.add_parser("test-db")
-    p1.add_argument("dbms")
-    p1.add_argument("--version", required=True)
-    p1.add_argument("--num-threads", type=int)
-    p1.add_argument("--timeout-seconds", type=int)
-    p1.add_argument("--oracle")
-    p1.add_argument("--username")
-    p1.add_argument("--password")
+    t = sub.add_parser("test-db")
+    t.add_argument("dbms")
+    t.add_argument("--version", required=True)
+    t.add_argument("--num-threads", type=int)
+    t.add_argument("--timeout-seconds", type=int)
+    t.add_argument("--oracle")
+    t.add_argument("--username")
+    t.add_argument("--password")
 
-    # test-all command
     sub.add_parser("test-all")
 
-    # docker build command
-    p3 = sub.add_parser("docker")
-    p3.add_argument("dbms")
-    p3.add_argument("--version", required=True)
-
-    args = parser.parse_args()
-
+    args = p.parse_args()
     if args.mode == "test-db":
-        if args.dbms not in glob["dbms_list"]:
-            raise ValueError(f"Unknown DBMS: {args.dbms}")
-        cfg = load_json(os.path.join(args.dbms, "config.json"))
+        db = args.dbms
+        if db not in glob["dbms_list"]: raise ValueError("Unknown DBMS")
+        cfg = load_json(f"{db}/config.json")
         cfg["version"] = args.version
-        if args.num_threads: cfg["num_threads"] = args.num_threads
-        if args.timeout_seconds: cfg["timeout_seconds"] = args.timeout_seconds
-        if args.oracle: cfg["oracle"] = args.oracle
-        if args.username: cfg["username"] = args.username
-        if args.password: cfg["password"] = args.password
-        generate_env_file()
-        run_test(args.dbms, cfg)
+        for key in ("num_threads", "timeout_seconds", "oracle", "username", "password"):
+            val = getattr(args, key if key != "timeout_seconds" else "timeout_seconds")
+            if val: cfg[key] = val
+        cfg_map = {db: cfg}
+        generate_env_and_override([db], cfg_map)
+        run_compose()
 
     elif args.mode == "test-all":
-        generate_env_file()
         for db in glob["dbms_list"]:
             path = os.path.join(db, "config.json")
             if os.path.exists(path):
-                run_test(db, load_json(path))
-            else:
-                print(f"[WARN] Skipped {db}: config.json not found.")
+                cfg = load_json(path)
+                cfg_map = {db: cfg}
+                print(f"\n[INFO] Testing DBMS: {db}")
+                generate_env_and_override([db], cfg_map)
+                run_compose()
 
-    elif args.mode == "docker":
-        if args.dbms not in glob["dbms_list"]:
-            raise ValueError(f"Unknown DBMS: {args.dbms}")
-        run_docker_build(args.dbms, args.version)
-
-    else:
-        parser.print_help()
 
 if __name__ == "__main__":
     main()
