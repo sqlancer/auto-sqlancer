@@ -1,3 +1,10 @@
 {
-  "dbms_list": ["mysql", "postgres"]
+  "dbms_list": ["mysql", "postgres"],
+  "dbms": "mysql",
+  "version": "custom",
+  "username": "root",
+  "password": "12345678",
+  "num_threads": 4,
+  "timeout_seconds": 60,
+  "oracle": "FUZZER"
 }

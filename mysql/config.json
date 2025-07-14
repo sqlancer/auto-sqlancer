@@ -1,29 +1,15 @@
 {
-  "version": "8.0",
+  "image": "mysql:8.0",
+  "container_name": "mysql-test",
+  "port": 3306,
+  "env": {
+    "MYSQL_ROOT_PASSWORD": "12345678"
+  },
   "username": "root",
   "password": "12345678",
+  "oracle": "FUZZER",
   "num_threads": 4,
   "timeout_seconds": 60,
-  "oracle": "FUZZER",
-  "docker": {
-    "image": "mysql:${VERSION}",
-    "container_name": "${TAG}",
-    "env_file": ".env",
-    "environment": {
-      "MYSQL_ROOT_PASSWORD": "${MYSQL_PASSWORD}"
-    },
-    "volumes": [
-      "./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql",
-      {
-        "type": "tmpfs",
-        "target": "/var/lib/mysql"
-      }
-    ],
-    "healthcheck": {
-      "test": ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_PASSWORD}"],
-      "interval": "5s",
-      "timeout": "3s",
-      "retries": 5
-    }
-  }
+  "init_sql": "CREATE DATABASE test;",
+  "init_sql_command": "docker exec {container_name} mysql -u{username} -p{password} -e \"{sql}\""
 }

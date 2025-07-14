@@ -1,7 +1,0 @@
-services:
-  sqlancer:
-    build:
-      context: ./sqlancer
-    container_name: sqlancer-test
-    env_file: .env
-    command: ["/root/entrypoint.sh"]
