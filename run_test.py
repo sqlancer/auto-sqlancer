@@ -61,10 +61,10 @@ def start_db_container(dbms, config_path):
         "docker", "run", "-d",
         "--name", container_name,
         "--network", "sqlancer-net",
-        "-p", f"{port}:{port}",
         *env_vars,
         image
     ])
+
 
     print(f"[INFO] Waiting for DBMS container '{container_name}' to be ready...")
     time.sleep(10)
