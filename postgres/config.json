@@ -1,9 +1,17 @@
 {
-    "version": "12",
+    "image": "postgres:13",
+    "container_name": "postgres-test",
+    "port": 5432,
+    "env": {
+      "POSTGRES_USER": "postgres",
+      "POSTGRES_PASSWORD": "12345678"
+    },
     "username": "postgres",
     "password": "12345678",
-    "num_threads": 2,
-    "timeout_seconds": 120,
-    "oracle": "QUERY_PARTITIONING"
-}
+    "oracle": "NOREC",
+    "num_threads": 4,
+    "timeout_seconds": 60,
+    "init_sql": "CREATE DATABASE test;",
+    "init_sql_command_template": "psql -U {username} -c \"{sql}\""
+  }
   
