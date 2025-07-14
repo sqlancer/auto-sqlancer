@@ -3,7 +3,5 @@ logs/
 __pycache__/
 **/__pycache__/
 
-Dockerfile
-**/Dockerfile
 
 .env
