@@ -13,7 +13,12 @@ def run_command(cmd, **kwargs):
     print("[CMD]", " ".join(cmd))
     subprocess.run(cmd, check=True, **kwargs)
 
-def ensure_sqlancer_image():
+def ensure_sqlancer_image(force_rebuild=False):
+    if force_rebuild:
+        print("[INFO] Rebuilding SQLancer image due to --cache not specified...")
+        run_command(["docker", "build", "--no-cache", "-t", "sqlancer:latest", "./sqlancer"])
+        return
+
     result = subprocess.run(
         ["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
         capture_output=True, text=True
@@ -24,6 +29,7 @@ def ensure_sqlancer_image():
     else:
         print("[INFO] SQLancer image not found. Building from ./sqlancer...")
         run_command(["docker", "build", "-t", "sqlancer:latest", "./sqlancer"])
+
 
 def container_exists(name):
     result = subprocess.run(
@@ -39,7 +45,7 @@ def start_db_container(dbms, config_path):
 
     cfg = load_json(config_path)
     image = cfg.get("image")
-    container_name = cfg.get("container_name", f"{dbms}-test")
+    container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     port = str(cfg.get("port", "3306"))
     env_dict = cfg.get("env", {})
 
@@ -86,10 +92,9 @@ def start_db_container(dbms, config_path):
             print(f"[WARNING] Failed to run init SQL: {e}")
 
 def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout):
-    ensure_sqlancer_image()
     run_command([
         "docker", "run", "--rm",
-        "--name", "sqlancer-runner",
+        "--name", "auto-sqlancer",
         "--network", "sqlancer-net",
         "-e", f"SQLANCER_DBMS={dbms}",
         "-e", f"SQLANCER_HOST={host_container_name}",
@@ -103,7 +108,7 @@ def start_sqlancer_container(dbms, host_container_name, username, password, orac
 
 def test_single(dbms, config_path, use_cache=False):
     ensure_network_exists()
-    ensure_sqlancer_image()
+    ensure_sqlancer_image(force_rebuild=not use_cache)
     cfg = load_json(config_path)
 
     image = cfg["image"]
@@ -141,7 +146,7 @@ def test_all(use_cache=False):
         test_single(dbms, config_path, use_cache)
 
 def test_custom_dockerfile(dockerfile_path, config_path, use_cache=False):
-    ensure_sqlancer_image()
+    ensure_sqlancer_image(force_rebuild=not use_cache)
     cfg = load_json(config_path)
     dbms = cfg["dbms"]
     tag = f"{dbms}-custom"

@@ -1,6 +1,6 @@
 {
   "image": "mysql:8.0",
-  "container_name": "mysql-test",
+  "container_name": "mysql-sqlancer",
   "port": 3306,
   "env": {
     "MYSQL_ROOT_PASSWORD": "12345678"
