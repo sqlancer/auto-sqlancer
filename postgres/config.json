@@ -1,6 +1,6 @@
 {
     "image": "postgres:13",
-    "container_name": "postgres",
+    "container_name": "postgres-sqlancer",
     "port": 5432,
     "env": {
       "POSTGRES_USER": "postgres",

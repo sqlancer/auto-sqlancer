@@ -45,7 +45,7 @@ def start_db_container(dbms, config_path):
 
     cfg = load_json(config_path)
     image = cfg.get("image")
-    container_name = cfg.get("container_name", f"{dbms}-test")
+    container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     port = str(cfg.get("port", "3306"))
     env_dict = cfg.get("env", {})
 
@@ -94,7 +94,7 @@ def start_db_container(dbms, config_path):
 def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout):
     run_command([
         "docker", "run", "--rm",
-        "--name", "sqlancer-runner",
+        "--name", "auto-sqlancer",
         "--network", "sqlancer-net",
         "-e", f"SQLANCER_DBMS={dbms}",
         "-e", f"SQLANCER_HOST={host_container_name}",
