@@ -47,7 +47,6 @@ def start_db_container(dbms, config_path):
     cfg = load_json(config_path)
     image = cfg.get("image")
     container_name = cfg.get("container_name", f"{dbms}-sqlancer")
-    port = str(cfg.get("port", "3306"))
     env_dict = cfg.get("env", {})
 
     if not image:
@@ -57,8 +56,6 @@ def start_db_container(dbms, config_path):
     if container_exists(container_name):
         print(f"[INFO] Container '{container_name}' already exists. Skipping startup.")
         return
-
-    ensure_network_exists()
 
     env_vars = []
     for k, v in env_dict.items():
@@ -116,35 +113,42 @@ def start_sqlancer_container(dbms, host_container_name, username, password, orac
         "sqlancer:latest"
     ])
 
-
-def test_single(dbms, config_path, use_cache=False):
+def build_environment(dbms, config_path, use_cache, custom=False, dockerfile_path=""):
     ensure_network_exists()
     ensure_sqlancer_image(force_rebuild=not use_cache)
     cfg = load_json(config_path)
 
     image = cfg["image"]
-    container_name = cfg.get("container_name", f"{dbms}-sqlancer")
-    username = cfg["username"]
-    password = cfg["password"]
-    oracle = cfg["oracle"]
-    threads = cfg["num_threads"]
-    timeout = cfg["timeout_seconds"]
+    container_name = cfg["container_name"]
 
-    if not use_cache:
+    if not use_cache and not custom:
         print(f"[INFO] Pulling image {image}")
         run_command(["docker", "pull", image])
 
+    if custom:
+        build_cmd = ["docker", "build", "-t", cfg["image"], os.path.dirname(dockerfile_path)]
+        if not use_cache:
+            build_cmd.insert(2, "--no-cache")
+        run_command(build_cmd)
+
     start_db_container(dbms, config_path)
+
+    return cfg, container_name
+
+
+def test_single(dbms, config_path, use_cache=False):
+    cfg, container_name = build_environment(dbms, config_path, use_cache)
 
     start_sqlancer_container(
         dbms=dbms,
         host_container_name=container_name,
-        username=username,
-        password=password,
-        oracle=oracle,
-        threads=threads,
-        timeout=timeout
+        username=cfg["username"],
+        password=cfg["password"],
+        oracle=cfg["oracle"],
+        threads=cfg["num_threads"],
+        timeout=cfg["timeout_seconds"]
     )
+
 
 def test_all(use_cache=False):
     global_cfg = load_json("config.json")
@@ -157,23 +161,19 @@ def test_all(use_cache=False):
         test_single(dbms, config_path, use_cache)
 
 def test_custom_dockerfile(dockerfile_path, config_path, use_cache=False):
-    ensure_sqlancer_image(force_rebuild=not use_cache)
     cfg = load_json(config_path)
     dbms = cfg["dbms"]
-    tag = f"{dbms}-custom"
-    username = cfg["username"]
-    password = cfg["password"]
-    oracle = cfg["oracle"]
-    threads = cfg["num_threads"]
-    timeout = cfg["timeout_seconds"]
+    cfg, container_name = build_environment(dbms, config_path, use_cache, True, dockerfile_path)
 
-    build_cmd = ["docker", "build", "-t", tag, os.path.dirname(dockerfile_path)]
-    if not use_cache:
-        build_cmd.insert(2, "--no-cache")
-
-    run_command(build_cmd)
-    start_db_container(dbms, config_path)
-    start_sqlancer_container(dbms, "localhost", username, password, oracle, threads, timeout)
+    start_sqlancer_container(
+        dbms=dbms,
+        host_container_name=container_name,
+        username=cfg["username"],
+        password=cfg["password"],
+        oracle=cfg["oracle"],
+        threads=cfg["num_threads"],
+        timeout=cfg["timeout_seconds"]
+    )
 
 def ensure_network_exists(network_name="sqlancer-net"):
     try:

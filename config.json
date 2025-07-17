@@ -1,10 +1,21 @@
 {
   "dbms_list": ["mysql", "postgres"],
   "dbms": "mysql",
+  "container_name": "mysql-custom",
+  "image": "mysql-custom",
   "version": "custom",
+  "env": {
+    "MYSQL_ROOT_PASSWORD": "12345678"
+  },
   "username": "root",
   "password": "12345678",
+  "oracle": "FUZZER",
   "num_threads": 4,
   "timeout_seconds": 60,
-  "oracle": "FUZZER"
+  "init_sql": "CREATE DATABASE test;",
+  "init_sql_command": "docker exec {container_name} mysql -u{username} -p{password} -e \"{sql}\""
+
 }
+
+
+  
