@@ -93,7 +93,7 @@ def start_db_container(dbms, config_path):
             print(f"[WARNING] Failed to run init SQL: {e}")
 
 def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout):
-    date = datetime.today().strftime("%Y-%m-%d-%H-%M-%S")  
+    date = datetime.today().strftime("%y-%m-%d-%H-%M-%S")  
     log_dir_host = os.path.abspath(os.path.join("logs", date))
     os.makedirs(log_dir_host, exist_ok=True)
 
