@@ -1,4 +1,5 @@
 logs/
+sqlancer-logs/
 
 __pycache__/
 **/__pycache__/

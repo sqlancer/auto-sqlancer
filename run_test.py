@@ -4,6 +4,7 @@ import json
 import subprocess
 import time
 import shlex
+from datetime import datetime
 
 def load_json(path):
     with open(path) as f:
@@ -92,6 +93,13 @@ def start_db_container(dbms, config_path):
             print(f"[WARNING] Failed to run init SQL: {e}")
 
 def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout):
+    date = datetime.today().strftime("%y-%m-%d-%H-%M-%S")  
+    log_dir_host = os.path.abspath(os.path.join("logs", date))
+    os.makedirs(log_dir_host, exist_ok=True)
+
+    run_log_container_dir = "/logs"
+    sqlancer_logs_container_dir = "/root/sqlancer/target/logs"
+
     run_command([
         "docker", "run", "--rm",
         "--name", "auto-sqlancer",
@@ -103,8 +111,11 @@ def start_sqlancer_container(dbms, host_container_name, username, password, orac
         "-e", f"SQLANCER_ORACLE={oracle}",
         "-e", f"SQLANCER_THREADS={threads}",
         "-e", f"SQLANCER_TIMEOUT={timeout}",
+        "-v", f"{log_dir_host}:{run_log_container_dir}",
+        "-v", f"{log_dir_host}:{sqlancer_logs_container_dir}",
         "sqlancer:latest"
     ])
+
 
 def test_single(dbms, config_path, use_cache=False):
     ensure_network_exists()
@@ -112,7 +123,7 @@ def test_single(dbms, config_path, use_cache=False):
     cfg = load_json(config_path)
 
     image = cfg["image"]
-    container_name = cfg.get("container_name", f"{dbms}-test")
+    container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     username = cfg["username"]
     password = cfg["password"]
     oracle = cfg["oracle"]

@@ -1,4 +1,9 @@
 #!/bin/bash
+
+LOG_DIR="/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="${LOG_DIR}/sqlancer.log"
+
 echo "=== SQLancer container start ==="
 echo "Waiting for DB to become healthy..."
 
@@ -13,14 +18,13 @@ for i in {1..60}; do
   sleep 1
 done
 
-echo "[INFO] DB host will be: $SQLANCER_HOST"
-echo "Running: java -jar sqlancer-*.jar --num-threads $SQLANCER_THREADS --timeout-seconds $SQLANCER_TIMEOUT --username $SQLANCER_USERNAME --password $SQLANCER_PASSWORD --host $SQLANCER_HOST $SQLANCER_DBMS --oracle $SQLANCER_ORACLE"
+# Prepare the command string
+CMD="java -jar sqlancer-*.jar --num-threads \"$SQLANCER_THREADS\" --timeout-seconds \"$SQLANCER_TIMEOUT\" --username \"$SQLANCER_USERNAME\" --password \"$SQLANCER_PASSWORD\" --host \"$SQLANCER_HOST\" \"$SQLANCER_DBMS\" --oracle \"$SQLANCER_ORACLE\""
 
-exec java -jar sqlancer-*.jar \
-  --num-threads "$SQLANCER_THREADS" \
-  --timeout-seconds "$SQLANCER_TIMEOUT" \
-  --username "$SQLANCER_USERNAME" \
-  --password "$SQLANCER_PASSWORD" \
-  --host "$SQLANCER_HOST" \
-  "$SQLANCER_DBMS" \
-  --oracle "$SQLANCER_ORACLE"
+# Print command to console and log file
+echo "Running: $CMD" | tee -a "$LOG_FILE"
+
+# Run the command and tee output to both console and log file
+eval "$CMD" 2>&1 | tee -a "$LOG_FILE"
+
+echo "[INFO] SQLancer finished. Logs saved to $LOG_FILE"
