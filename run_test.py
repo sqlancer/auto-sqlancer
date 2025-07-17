@@ -54,8 +54,8 @@ def start_db_container(dbms, config_path):
         sys.exit(1)
 
     if container_exists(container_name):
-        print(f"[INFO] Container '{container_name}' already exists. Skipping startup.")
-        return
+        print(f"[INFO] Container '{container_name}' already exists. Remove the old container and restart.")
+        remove_container(container_name)
 
     env_vars = []
     for k, v in env_dict.items():
@@ -149,6 +149,16 @@ def test_single(dbms, config_path, use_cache=False):
         timeout=cfg["timeout_seconds"]
     )
 
+    remove_container(container_name)
+
+def remove_container(container_name):
+    try:
+        print(f"[INFO] Removing container: {container_name}")
+        subprocess.run(["docker", "rm", "-f", container_name], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"[WARNING] Failed to remove container {container_name}: {e}")
+
+
 
 def test_all(use_cache=False):
     global_cfg = load_json("config.json")
@@ -174,6 +184,8 @@ def test_custom_dockerfile(dockerfile_path, config_path, use_cache=False):
         threads=cfg["num_threads"],
         timeout=cfg["timeout_seconds"]
     )
+
+    remove_container(container_name)
 
 def ensure_network_exists(network_name="sqlancer-net"):
     try:
