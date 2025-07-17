@@ -45,5 +45,5 @@ python3 start.py test --dockerfile <path/to/Dockerfile> --config <path/to/config
 
 - Example: 
 ```
-python3 start.py test --dockerfile ./Dockerfile --config mysql/config.json
+python3 start.py test --dockerfile ./Dockerfile --config ./config.json
 ```
