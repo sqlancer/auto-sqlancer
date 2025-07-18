@@ -11,10 +11,7 @@
   "password": "12345678",
   "oracle": "FUZZER",
   "num_threads": 4,
-  "timeout_seconds": 60,
-  "init_sql": "CREATE DATABASE test;",
-  "init_sql_command": "docker exec {container_name} mysql -u{username} -p{password} -e \"{sql}\""
-
+  "timeout_seconds": 60
 }
 
 
