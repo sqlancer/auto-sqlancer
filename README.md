@@ -8,8 +8,37 @@ A suite of automation scripts that streamline the sqlancer testing process.
 - Docker
 
 ## Using Auto-sqlancer
-### 1. Test all DBMSs
+### 1. Build Images
+#### Build all DBMS images
+```bash
+python3 start.py build --dbms all 
+```
 
+- --dbms all: build all the database images
+
+
+#### Build a single DBMS
+
+```bash
+python3 start.py build --dbms <dbms_name> 
+
+```
+
+- <dbms_name>: e.g., mysql, postgres, sqlite, etc.
+
+
+- Example: 
+```
+python3 start.py build --dbms mysql 
+```
+
+#### Build sqlancer image
+```bash
+python3 start.py build --sqlancer
+```
+
+### 2. Test 
+#### Test all DBMSs
 ```bash
 python3 start.py test --dbms all [--cache]
 ```
@@ -18,7 +47,7 @@ python3 start.py test --dbms all [--cache]
 
 - --cache(optional): skip pulling/building Docker image
 
-### 2. Test a single DBMS
+#### Test a single DBMS
 
 ```bash
 python3 start.py test --dbms <dbms_name> --config <path/to/config.json> [--cache]
@@ -34,7 +63,7 @@ python3 start.py test --dbms <dbms_name> --config <path/to/config.json> [--cache
 python3 start.py test --dbms mysql --config mysql/config.json
 ```
 
-### 3. Test a Custom Dockerfile-Based DBMS Container
+#### Test a Custom Dockerfile-Based DBMS Container
 ```bash
 python3 start.py test --dockerfile <path/to/Dockerfile> --config <path/to/config.json> [--cache]
 ```
@@ -45,5 +74,5 @@ python3 start.py test --dockerfile <path/to/Dockerfile> --config <path/to/config
 
 - Example: 
 ```
-python3 start.py test --dockerfile ./Dockerfile --config mysql/config.json
+python3 start.py test --dockerfile ./Dockerfile --config ./config.json
 ```

@@ -27,4 +27,4 @@ echo "Running: $CMD" | tee -a "$LOG_FILE"
 # Run the command and tee output to both console and log file
 eval "$CMD" 2>&1 | tee -a "$LOG_FILE"
 
-echo "[INFO] SQLancer finished. Logs saved to $LOG_FILE"
+echo "[INFO] SQLancer finished. Logs saved to $LOG_DIR"
