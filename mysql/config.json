@@ -1,4 +1,6 @@
 {
+  "embedded": "no",
+  "dbms": "mysql",
   "image": "mysql:8.0",
   "container_name": "mysql-sqlancer",
   "port": 3306,

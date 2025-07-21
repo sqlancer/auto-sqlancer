@@ -47,15 +47,15 @@ def main():
                     print(f"[WARNING] Skipping {dbms}, missing config file.")
                     continue
                 cfg = load_json(config_path)
-                build_environment(args.dbms, cfg, use_cache)
-                test_single(dbms, cfg, use_cache)
+                build_environment(cfg, use_cache)
+                test_single(cfg, use_cache)
 
         elif args.dbms:
             if not args.config:
                 parser.error("Single DBMS test requires --config")
             cfg = load_json(args.config)
-            build_environment(args.dbms, cfg, use_cache)
-            test_single(args.dbms, cfg, use_cache)
+            build_environment(cfg, use_cache)
+            test_single(cfg, use_cache)
 
         else:
             parser.error("Must specify either --dbms or --dockerfile")

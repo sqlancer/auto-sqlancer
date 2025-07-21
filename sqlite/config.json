@@ -1,0 +1,11 @@
+{
+    "embedded": "yes",
+    "dbms": "sqlite3",
+    "username": "localhost",
+    "password": "localhost",
+    "container_name": "localhost",
+    "oracle": "NoREC",
+    "num_threads": 4,
+    "timeout_seconds": 60
+}
+  

@@ -1,5 +1,5 @@
 {
-  "dbms_list": ["mysql", "postgres"],
+  "dbms_list": ["mysql", "postgres", "sqlite"],
   "dbms": "mysql",
   "container_name": "mysql-custom",
   "image": "mysql-custom",

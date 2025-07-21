@@ -1,4 +1,6 @@
 {
+    "embedded": "no",
+    "dbms": "postgres",
     "image": "postgres:13",
     "container_name": "postgres-sqlancer",
     "port": 5432,
@@ -8,7 +10,7 @@
     },
     "username": "postgres",
     "password": "12345678",
-    "oracle": "NOREC",
+    "oracle": "NoREC",
     "num_threads": 4,
     "timeout_seconds": 60,
     "init_sql": "CREATE DATABASE test;",

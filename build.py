@@ -55,5 +55,6 @@ def build_db_image(cfg, use_cache, custom=False, dockerfile_path=""):
 def build_environment(cfg, use_cache, custom=False, dockerfile_path=""):
     build_network()
     build_sqlancer_image(force_rebuild=not use_cache)
-    build_db_image(cfg, use_cache, custom, dockerfile_path)
+    if cfg["embedded"] == "no":
+        build_db_image(cfg, use_cache, custom, dockerfile_path)
     

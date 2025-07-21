@@ -87,11 +87,12 @@ def start_sqlancer_container(dbms, host_container_name, username, password, orac
     ])
 
 
-def test_single(dbms, cfg, use_cache=False):
+def test_single(cfg, use_cache=False):
+    if cfg["embedded"] == "no":
+        start_db_container(cfg["dbms"], cfg)
 
-    start_db_container(dbms, cfg)
     start_sqlancer_container(
-        dbms=dbms,
+        dbms=cfg["dbms"],
         host_container_name=cfg["container_name"],
         username=cfg["username"],
         password=cfg["password"],
@@ -100,7 +101,8 @@ def test_single(dbms, cfg, use_cache=False):
         timeout=cfg["timeout_seconds"]
     )
 
-    remove_container(cfg["container_name"])
+    if cfg["embedded"] == "no":
+        remove_container(cfg["container_name"])
 
 def remove_container(container_name):
     try:
