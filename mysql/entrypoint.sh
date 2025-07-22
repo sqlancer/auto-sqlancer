@@ -1,15 +1,17 @@
 #!/bin/bash
+set -e
 
-set -e  
+echo "Starting mysqld in background..."
+/usr/local/mysql/bin/mysqld --user=mysql --datadir=/var/lib/mysql --basedir=/usr/local/mysql --skip-networking &
+pid="$!"
 
-MYSQL_BASEDIR=/usr/local/mysql
-MYSQL_DATADIR=$MYSQL_BASEDIR/data
+sleep 10
 
-if [ ! -d "$MYSQL_DATADIR/mysql" ]; then
-  echo "Initializing MySQL data directory..."
-  chown -R mysql:mysql "$MYSQL_BASEDIR"
-  mysqld --initialize-insecure --user=mysql --basedir="$MYSQL_BASEDIR" --datadir="$MYSQL_DATADIR"
-fi
+echo "Running init.sql to grant privileges..."
+/usr/local/mysql/bin/mysql -uroot < /init.sql
+
+kill "$pid"
+sleep 5
 
 echo "Starting MySQL server..."
-exec mysqld --user=mysql --basedir="$MYSQL_BASEDIR" --datadir="$MYSQL_DATADIR"
+exec /usr/local/mysql/bin/mysqld --user=mysql --datadir=/var/lib/mysql --basedir=/usr/local/mysql --bind-address=0.0.0.0

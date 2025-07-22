@@ -1,38 +1,31 @@
 FROM ubuntu:22.04
 
-ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y wget libaio1 libncurses6 libnuma1 xz-utils pwgen lsb-release gnupg libssl-dev && \
+    apt-get clean
 
-RUN apt-get update && apt-get install -y \
-    git cmake make gcc g++ bison \
-    libncurses5-dev libssl-dev libaio-dev \
-    libz-dev libsystemd-dev \
-    perl wget curl vim pkg-config \
-    && apt-get clean
+ENV MYSQL_VERSION=8.3.0 \
+    MYSQL_USER=mysql \
+    MYSQL_BASE=/usr/local/mysql \
+    MYSQL_DATADIR=/var/lib/mysql
 
-WORKDIR /root
-RUN git clone https://github.com/mysql/mysql-server.git
-WORKDIR /root/mysql-server
-RUN git checkout 8.4
-RUN mkdir bld
-WORKDIR /root/mysql-server/bld
-RUN cmake .. \
-  -DDOWNLOAD_BOOST=1 \
-  -DWITH_BOOST=../boost \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
-  -DWITH_SSL=system \
-  -DWITH_ZLIB=bundled \
-  -DWITH_INNODB_MEMCACHED=OFF \
-  -DENABLE_DOWNLOADS=1
-RUN make -j$(nproc) && make install
+RUN wget https://downloads.mysql.com/archives/get/p/23/file/mysql-${MYSQL_VERSION}-linux-glibc2.28-x86_64.tar.xz && \
+    tar -xf mysql-${MYSQL_VERSION}-linux-glibc2.28-x86_64.tar.xz && \
+    mv mysql-${MYSQL_VERSION}-linux-glibc2.28-x86_64 ${MYSQL_BASE} && \
+    rm mysql-${MYSQL_VERSION}-linux-glibc2.28-x86_64.tar.xz
 
-RUN useradd -r mysql && mkdir -p /usr/local/mysql/data && chown -R mysql:mysql /usr/local/mysql
+RUN useradd -r -s /bin/false ${MYSQL_USER} && \
+    mkdir -p ${MYSQL_DATADIR} /var/run/mysqld && \
+    chown -R ${MYSQL_USER}:${MYSQL_USER} ${MYSQL_DATADIR} /var/run/mysqld ${MYSQL_BASE}
+
+RUN ${MYSQL_BASE}/bin/mysqld --initialize-insecure --basedir=${MYSQL_BASE} --datadir=${MYSQL_DATADIR} --user=${MYSQL_USER}
+
+COPY init.sql /init.sql
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-ENV PATH="/usr/local/mysql/bin:$PATH"
-
-WORKDIR /usr/local/mysql
+ENV PATH=${MYSQL_BASE}/bin:$PATH
 
 EXPOSE 3306
 
