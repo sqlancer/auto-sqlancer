@@ -37,8 +37,6 @@ def main():
             if not args.config:
                 parser.error("Custom DBMS test requires --config")
             cfg = load_json(args.config)
-            cfg["image"] = f"{cfg['dbms']}-custom"
-            cfg["container_name"] = f"{cfg['dbms']}-custom"
             build_environment(cfg, use_cache, True, args.dockerfile)
             test_custom_dockerfile(args.dockerfile, cfg, use_cache)
 
