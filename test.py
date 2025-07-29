@@ -24,7 +24,7 @@ def start_db_container(dbms, cfg, script_log, docker_log):
         sys.exit(1)
 
     if container_exists(container_name):
-        script_log.info( "Container already exists, remove the old container and restart")
+        script_log.info( "Container %s already exists, remove the old container and restart", container_name)
         remove_container(container_name, script_log, docker_log)
 
     env_vars = []
@@ -39,7 +39,7 @@ def start_db_container(dbms, cfg, script_log, docker_log):
         image
     ], docker_log)
 
-    script_log.info("Starting DBMS container...")
+    script_log.info("Starting DBMS container: %s ...", container_name)
     time.sleep(10)
 
     
@@ -56,12 +56,13 @@ def start_db_container(dbms, cfg, script_log, docker_log):
             script_log.info("Running init SQL inside container...")
             run_command(full_cmd, docker_log)
         except Exception as e:
-            script_log.warning("Init SQL failed")
+            script_log.warning("Init SQL running failed")
 
-    script_log.info("DBMS container started")
+    script_log.info("DBMS container started: %s", container_name)
 
 def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout, script_log, docker_log, sqlancer_log, run_dir):
-    script_log.info("Executing test...")
+    cmd = f"java -jar sqlancer-*.jar --num-threads {threads} --timeout-seconds {timeout} --username {username} --password {password} --host {host_container_name} {dbms} --oracle {oracle}"
+    script_log.info("Executing test: %s", cmd)
     # date = datetime.today().strftime("%y-%m-%d-%H-%M-%S")  
     # log_dir_host = os.path.abspath(os.path.join("logs", date))
     # os.makedirs(log_dir_host, exist_ok=True)
@@ -111,12 +112,12 @@ def test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache=Fa
     script_log.info("==============================Executing test==============================")
 
 def remove_container(container_name, script_log, docker_log):
-    script_log.info("Removing container...")
+    script_log.info("Removing container: %s...", container_name)
     try:
         run_command(["docker", "rm", "-f", container_name], docker_log)
-        script_log.info("Container removed")
+        script_log.info("Container removed: %s", container_name)
     except subprocess.CalledProcessError as e:
-        script_log.warning("Container removing failed")
+        script_log.warning("Container removing failed: %s", container_name)
 
 
 def test_custom_dockerfile(dockerfile_path, cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache=False):
