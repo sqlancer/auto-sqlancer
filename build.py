@@ -1,15 +1,14 @@
 import os
 import sys
 import subprocess
+import logging
+from utils import run_command
 
-def run_command(cmd, **kwargs):
-    print("[CMD]", " ".join(cmd))
-    subprocess.run(cmd, check=True, **kwargs)
-
-def build_sqlancer_image(force_rebuild=False):
+def build_sqlancer_image(script_log, docker_log, force_rebuild=False):
     if force_rebuild:
-        print("[INFO] Rebuilding SQLancer image due to --cache not specified...")
-        run_command(["docker", "build", "--no-cache", "-t", "sqlancer:latest", "./sqlancer"])
+        script_log.info("Rebuilding SQLancer image...")
+        run_command(["docker", "build", "--no-cache", "-t", "sqlancer:latest", "./sqlancer"], docker_log)
+        script_log.info("SQLancer image built")
         return
 
     result = subprocess.run(
@@ -18,12 +17,13 @@ def build_sqlancer_image(force_rebuild=False):
     )
     images = result.stdout.strip().splitlines()
     if "sqlancer:latest" in images:
-        print("[INFO] SQLancer image already exists: sqlancer:latest")
+        script_log.info("SQLancer image exists")
     else:
-        print("[INFO] SQLancer image not found. Building from ./sqlancer...")
-        run_command(["docker", "build", "-t", "sqlancer:latest", "./sqlancer"])
+        script_log.info("Building SQLancer image from cache...")
+        run_command(["docker", "build", "-t", "sqlancer:latest", "./sqlancer"], docker_log)
+        script_log.info("SQLancer image built")
 
-def build_network(network_name="sqlancer-net"):
+def build_network(script_log, network_name="sqlancer-net"):
     try:
         output = subprocess.check_output([
             "docker", "network", "ls",
@@ -32,29 +32,34 @@ def build_network(network_name="sqlancer-net"):
         ])
         networks = output.decode().splitlines()
         if network_name not in networks:
-            print(f"[INFO] Creating docker network: {network_name}")
-            subprocess.run(["docker", "network", "create", network_name], check=True)
+            script_log.info("Building network...")
+            run_command(["docker", "network", "create", network_name], docker_log)
+            script_log.info("Network built")
         else:
-            print(f"[INFO] Docker network '{network_name}' already exists.")
+            script_log.info("Network exists")
+            
     except Exception as e:
-        print(f"[ERROR] Failed to check/create Docker network: {e}")
+        script_log.error("Network building failed")
         sys.exit(1)
 
-def build_db_image(cfg, use_cache, custom=False, dockerfile_path=""):
+def build_db_image(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
+    script_log.info("Building db image...")
     if not use_cache and not custom:
         image = cfg["image"]
-        print(f"[INFO] Pulling image {image}")
-        run_command(["docker", "pull", image])
+        run_command(["docker", "pull", image], docker_log)
 
     if custom:
         build_cmd = ["docker", "build", "-t", cfg["image"], os.path.dirname(dockerfile_path)]
         if not use_cache:
             build_cmd.insert(2, "--no-cache")
-        run_command(build_cmd)
+        run_command(build_cmd, docker_log)
+    script_log.info("DB image built")
 
-def build_environment(cfg, use_cache, custom=False, dockerfile_path=""):
-    build_network()
-    build_sqlancer_image(force_rebuild=not use_cache)
+def build_environment(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
+    script_log.info("==============================Building environment==============================")
+    build_network(script_log)
+    build_sqlancer_image(script_log, docker_log, force_rebuild=not use_cache)
     if cfg["embedded"] == "no":
-        build_db_image(cfg, use_cache, custom, dockerfile_path)
+        build_db_image(cfg, use_cache, script_log, docker_log, custom, dockerfile_path)
+    script_log.info("==============================Building environment==============================")
     
