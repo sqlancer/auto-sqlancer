@@ -5,10 +5,7 @@ import subprocess
 import time
 import shlex
 from datetime import datetime
-
-def run_command(cmd, **kwargs):
-    print("[CMD]", " ".join(cmd))
-    subprocess.run(cmd, check=True, **kwargs)
+from utils import run_command
 
 def container_exists(name):
     result = subprocess.run(
@@ -17,18 +14,18 @@ def container_exists(name):
     )
     return name in result.stdout.strip().splitlines()
 
-def start_db_container(dbms, cfg):
+def start_db_container(dbms, cfg, script_log, docker_log):
     image = cfg.get("image")
     container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     env_dict = cfg.get("env", {})
 
     if not image:
-        print("[ERROR] Missing 'image' field in config.json")
+        script_log.error( "Missing 'image' field in config.json")
         sys.exit(1)
 
     if container_exists(container_name):
-        print(f"[INFO] Container '{container_name}' already exists. Remove the old container and restart.")
-        remove_container(container_name)
+        script_log.info( "Container %s already exists, remove the old container and restart", container_name)
+        remove_container(container_name, script_log, docker_log)
 
     env_vars = []
     for k, v in env_dict.items():
@@ -40,13 +37,12 @@ def start_db_container(dbms, cfg):
         "--network", "sqlancer-net",
         *env_vars,
         image
-    ])
+    ], docker_log)
 
-
-    print(f"[INFO] Waiting for DBMS container '{container_name}' to be ready...")
+    script_log.info("Starting DBMS container: %s ...", container_name)
     time.sleep(10)
 
-    # Optional init SQL
+    
     init_sql = cfg.get("init_sql")
     init_cmd_template = cfg.get("init_sql_command_template")
     if init_sql and init_cmd_template:
@@ -57,18 +53,22 @@ def start_db_container(dbms, cfg):
                 sql=init_sql
             )
             full_cmd = ["docker", "exec", container_name] + shlex.split(cmd_str)
-            print(f"[INFO] Running init SQL inside container: {init_sql}")
-            run_command(full_cmd)
+            script_log.info("Running init SQL inside container...")
+            run_command(full_cmd, docker_log)
         except Exception as e:
-            print(f"[WARNING] Failed to run init SQL: {e}")
+            script_log.warning("Init SQL running failed")
 
-def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout):
-    date = datetime.today().strftime("%y-%m-%d-%H-%M-%S")  
-    log_dir_host = os.path.abspath(os.path.join("logs", date))
+    script_log.info("DBMS container started: %s", container_name)
+
+def start_sqlancer_container(dbms, host_container_name, username, password, oracle, threads, timeout, script_log, docker_log, sqlancer_log, run_dir):
+    cmd = f"java -jar sqlancer-*.jar --num-threads {threads} --timeout-seconds {timeout} --username {username} --password {password} --host {host_container_name} {dbms} --oracle {oracle}"
+    script_log.info("Executing test: %s", cmd)
+    # date = datetime.today().strftime("%y-%m-%d-%H-%M-%S")  
+    # log_dir_host = os.path.abspath(os.path.join("logs", date))
+    # os.makedirs(log_dir_host, exist_ok=True)
+
+    log_dir_host = os.path.abspath(run_dir)
     os.makedirs(log_dir_host, exist_ok=True)
-
-    run_log_container_dir = "/logs"
-    sqlancer_logs_container_dir = "/root/sqlancer/target/logs"
 
     run_command([
         "docker", "run", "--rm",
@@ -81,15 +81,17 @@ def start_sqlancer_container(dbms, host_container_name, username, password, orac
         "-e", f"SQLANCER_ORACLE={oracle}",
         "-e", f"SQLANCER_THREADS={threads}",
         "-e", f"SQLANCER_TIMEOUT={timeout}",
-        "-v", f"{log_dir_host}:{run_log_container_dir}",
-        "-v", f"{log_dir_host}:{sqlancer_logs_container_dir}",
+        # "-v", f"{log_dir_host}:/logs",
+        "-v", f"{log_dir_host}:/root/sqlancer/target/logs",
         "sqlancer:latest"
-    ])
+    ], sqlancer_log)
+    script_log.info("Test executed")
 
 
-def test_single(cfg, use_cache=False):
+def test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache=False):
+    script_log.info("==============================Executing test==============================")
     if cfg["embedded"] == "no":
-        start_db_container(cfg["dbms"], cfg)
+        start_db_container(cfg["dbms"], cfg, script_log, docker_log)
 
     start_sqlancer_container(
         dbms=cfg["dbms"],
@@ -98,26 +100,32 @@ def test_single(cfg, use_cache=False):
         password=cfg["password"],
         oracle=cfg["oracle"],
         threads=cfg["num_threads"],
-        timeout=cfg["timeout_seconds"]
+        timeout=cfg["timeout_seconds"],
+        script_log=script_log,
+        sqlancer_log=sqlancer_log,
+        docker_log=docker_log,
+        run_dir=run_dir
     )
 
     if cfg["embedded"] == "no":
-        remove_container(cfg["container_name"])
+        remove_container(cfg["container_name"], script_log, docker_log)
+    script_log.info("==============================Executing test==============================")
 
-def remove_container(container_name):
+def remove_container(container_name, script_log, docker_log):
+    script_log.info("Removing container: %s...", container_name)
     try:
-        print(f"[INFO] Removing container: {container_name}")
-        subprocess.run(["docker", "rm", "-f", container_name], check=True)
+        run_command(["docker", "rm", "-f", container_name], docker_log)
+        script_log.info("Container removed: %s", container_name)
     except subprocess.CalledProcessError as e:
-        print(f"[WARNING] Failed to remove container {container_name}: {e}")
+        script_log.warning("Container removing failed: %s", container_name)
 
 
-
-
-def test_custom_dockerfile(dockerfile_path, cfg, use_cache=False):
+def test_custom_dockerfile(dockerfile_path, cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache=False):
+    script_log.info("==============================Executing test==============================")
+    
     dbms=cfg["dbms"]
 
-    start_db_container(dbms, cfg)
+    start_db_container(dbms, cfg, script_log, docker_log)
     start_sqlancer_container(
         dbms=dbms,
         host_container_name=cfg["container_name"],
@@ -125,9 +133,13 @@ def test_custom_dockerfile(dockerfile_path, cfg, use_cache=False):
         password=cfg["password"],
         oracle=cfg["oracle"],
         threads=cfg["num_threads"],
-        timeout=cfg["timeout_seconds"]
+        timeout=cfg["timeout_seconds"],
+        script_log=script_log,
+        sqlancer_log=sqlancer_log,
+        docker_log=docker_log,
+        run_dir=run_dir
     )
 
-    remove_container(cfg["container_name"])
-
+    remove_container(cfg["container_name"], script_log, docker_log)
+    script_log.info("==============================Executing test==============================")
 

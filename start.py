@@ -5,6 +5,8 @@ import sys
 import json
 from test import test_single, test_custom_dockerfile
 from build import build_environment, build_sqlancer_image, build_db_image
+from utils import setup_logging
+import logging
 
 def load_json(path):
     with open(path) as f:
@@ -32,52 +34,54 @@ def main():
     global_cfg = load_json("config.json")
     dbms_list = global_cfg.get("dbms_list", [])
 
+    script_log, docker_log, sqlancer_log, run_dir = setup_logging()
+    script_log.info("Log output directory: %s", run_dir)
+
     if args.command == "test":
         if args.dockerfile:
             if not args.config:
                 parser.error("Custom DBMS test requires --config")
             cfg = load_json(args.config)
-            build_environment(cfg, use_cache, True, args.dockerfile)
-            test_custom_dockerfile(args.dockerfile, cfg, use_cache)
+            build_environment(cfg, use_cache, script_log, docker_log, True, args.dockerfile)
+            test_custom_dockerfile(args.dockerfile, cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
 
         elif args.dbms == "all":
             for dbms in dbms_list:
                 config_path = os.path.join(dbms, "config.json")
                 if not os.path.exists(config_path):
-                    print(f"[WARNING] Skipping {dbms}, missing config file.")
+                    # print(f"[WARNING] Skipping {dbms}, missing config file.")
                     continue
                 cfg = load_json(config_path)
-                build_environment(cfg, use_cache)
-                test_single(cfg, use_cache)
+                build_environment(cfg, use_cache, script_log, docker_log)
+                test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
 
         elif args.dbms:
             if not args.config:
                 parser.error("Single DBMS test requires --config")
             cfg = load_json(args.config)
-            build_environment(cfg, use_cache)
-            test_single(cfg, use_cache)
-
+            build_environment(cfg, use_cache, script_log, docker_log)
+            test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
         else:
             parser.error("Must specify either --dbms or --dockerfile")
     elif args.command == "build":
         if args.sqlancer:
-            build_sqlancer_image(not use_cache)
+            build_sqlancer_image(script_log, docker_log, not use_cache)
 
         elif args.dbms == "all":
             for dbms in dbms_list:
                 config_path = os.path.join(dbms, "config.json")
                 if not os.path.exists(config_path):
-                    print(f"[WARNING] Skipping {dbms}, missing config file.")
+                    # print(f"[WARNING] Skipping {dbms}, missing config file.")
                     continue
                 cfg = load_json(config_path)
-                build_db_image(cfg, use_cache)
+                build_db_image(cfg, use_cache, script_log, docker_log)
         elif args.dbms:
             config_path = os.path.join(args.dbms, "config.json")
             if not os.path.exists(config_path):
-                print(f"[ERROR] Config file not found for DBMS: {args.dbms}")
+                # print(f"[ERROR] Config file not found for DBMS: {args.dbms}")
                 sys.exit(1)
             cfg = load_json(config_path)
-            build_db_image(cfg, use_cache)
+            build_db_image(cfg, use_cache, script_log, docker_log)
 
         else:
             parser.error("Must specify --dbms or --sqlancer for build command")
