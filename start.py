@@ -43,7 +43,7 @@ def main():
                 parser.error("Custom DBMS test requires --config")
             cfg = load_json(args.config)
             build_environment(cfg, use_cache, script_log, docker_log, True, args.dockerfile)
-            test_custom_dockerfile(args.dockerfile, cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
+            test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
 
         elif args.dbms == "all":
             for dbms in dbms_list:
