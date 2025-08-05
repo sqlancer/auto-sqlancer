@@ -1,0 +1,13 @@
+{
+    "embedded": "no",
+    "dbms": "tidb",
+    "image": "pingcap/tidb:nightly",
+    "container_name": "tidb-sqlancer",
+    "port": 4000,
+    "username": "root",
+    "password": "",
+    "oracle": "WHERE",
+    "num_threads": 4,
+    "timeout_seconds": 60
+  }
+  
