@@ -54,7 +54,7 @@ def build_db_image(cfg, use_cache, script_log, docker_log, custom=False, dockerf
             build_cmd.insert(2, "--no-cache")
         script_log.info("Building db image: %s ...", cfg["image"])
         run_command(build_cmd, docker_log)
-        script_log.info("DB image pulled: %s ...", cfg["image"])
+        script_log.info("DB image built: %s ...", cfg["image"])
     else:
         script_log.info("DB image already exists: %s", cfg["image"])
 
