@@ -1,0 +1,17 @@
+{
+    "embedded": "no",
+    "dbms": "cockroachdb",
+    "image": "cockroachdb/cockroach:v24.1.0",
+    "container_name": "cockroachdb-sqlancer",
+    "port": 26257,
+    "startup_cmd": [
+        "start-single-node",
+        "--insecure"
+    ],
+    "username": "root",
+    "password": "",
+    "oracle": "CERT",
+    "num_threads": 4,
+    "timeout_seconds": 60
+  }
+  

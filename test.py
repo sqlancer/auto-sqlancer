@@ -18,6 +18,7 @@ def start_db_container(dbms, cfg, script_log, docker_log):
     image = cfg.get("image")
     container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     env_dict = cfg.get("env", {})
+    startup_cmd = cfg.get("startup_cmd", [])
 
     if not image:
         script_log.error( "Missing 'image' field in config.json")
@@ -36,7 +37,8 @@ def start_db_container(dbms, cfg, script_log, docker_log):
         "--name", container_name,
         "--network", "sqlancer-net",
         *env_vars,
-        image
+        image,
+        *startup_cmd
     ], docker_log)
 
     script_log.info("Starting DBMS container: %s ...", container_name)
