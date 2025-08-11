@@ -10,7 +10,7 @@
     ],
     "username": "root",
     "password": "",
-    "oracle": "CERT",
+    "oracle": "NOREC",
     "num_threads": 4,
     "timeout_seconds": 60
   }
