@@ -1,7 +1,8 @@
 {
     "embedded": "no",
     "dbms": "tidb",
-    "image": "pingcap/tidb:nightly",
+    "image_name": "pingcap/tidb",
+    "tag": "nightly",
     "container_name": "tidb-sqlancer",
     "port": 4000,
     "username": "root",

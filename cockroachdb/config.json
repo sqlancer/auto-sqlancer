@@ -1,7 +1,8 @@
 {
     "embedded": "no",
     "dbms": "cockroachdb",
-    "image": "cockroachdb/cockroach:v24.1.0",
+    "image_name": "cockroachdb/cockroach",
+    "tag": "v24.1.0",
     "container_name": "cockroachdb-sqlancer",
     "port": 26257,
     "startup_cmd": [

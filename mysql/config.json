@@ -2,6 +2,8 @@
   "embedded": "no",
   "dbms": "mysql",
   "image": "mysql:8.0",
+  "image_name": "mysql",
+  "tag": "8.0",
   "container_name": "mysql-sqlancer",
   "port": 3306,
   "env": {
