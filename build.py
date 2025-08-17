@@ -43,20 +43,22 @@ def build_network(script_log, docker_log, network_name="sqlancer-net"):
         sys.exit(1)
 
 def build_db_image(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
+    image = f"{cfg['image_name']}:{cfg['tag']}"
+
     if not use_cache and not custom:
-        image = cfg["image"]
         script_log.info("Pulling db image: %s ...", image)
         run_command(["docker", "pull", image], docker_log)
         script_log.info("DB image pulled: %s", image)
     elif custom:
-        build_cmd = ["docker", "build", "-t", cfg["image"], os.path.dirname(dockerfile_path)]
+        build_cmd = ["docker", "build", "-t", image, os.path.dirname(dockerfile_path)]
         if not use_cache:
             build_cmd.insert(2, "--no-cache")
-        script_log.info("Building db image: %s ...", cfg["image"])
+        script_log.info("Building db image: %s ...", image)
         run_command(build_cmd, docker_log)
-        script_log.info("DB image built: %s ...", cfg["image"])
+        script_log.info("DB image built: %s ...", image)
     else:
-        script_log.info("DB image already exists: %s", cfg["image"])
+        script_log.info("DB image already exists: %s", image)
+
 
 def build_environment(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
     script_log.info("==============================Building environment==============================")

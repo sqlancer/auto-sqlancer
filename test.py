@@ -15,7 +15,17 @@ def container_exists(name):
     return name in result.stdout.strip().splitlines()
 
 def start_db_container(dbms, cfg, script_log, docker_log):
-    image = cfg.get("image")
+    image_name = cfg.get("image_name")
+    tag = cfg.get("tag")
+    if not image_name:
+        script_log.error("Missing 'image_name' field in config.json")
+        sys.exit(1)
+    if not tag or str(tag).strip() == "":
+        script_log.error("Missing 'tag' field in config.json")
+        sys.exit(1)
+    else:
+        image = f"{image_name}:{tag}"
+        
     container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     env_dict = cfg.get("env", {})
     startup_cmd = cfg.get("startup_cmd", [])
