@@ -4,10 +4,24 @@ import subprocess
 import logging
 from utils import run_command
 
-def build_sqlancer_image(script_log, docker_log, force_rebuild=False):
+def build_sqlancer_image(script_log, docker_log, force_rebuild=False, version=None):
     if force_rebuild:
-        script_log.info("Rebuilding SQLancer image: sqlancer:latest ...")
-        run_command(["docker", "build", "--no-cache", "-t", "sqlancer:latest", "./sqlancer"], docker_log)
+        if version:
+            script_log.info(
+                "Rebuilding SQLancer image: sqlancer:latest (DUCKDB_JDBC_VERSION=%s) ...",
+                version
+            )
+            run_command([
+                "docker", "build", "--no-cache",
+                "--build-arg", f"DUCKDB_JDBC_VERSION={version}",
+                "-t", "sqlancer:latest", "./sqlancer"
+            ], docker_log)
+        else:
+            script_log.info("Rebuilding SQLancer image: sqlancer:latest ...")
+            run_command([
+                "docker", "build", "--no-cache",
+                "-t", "sqlancer:latest", "./sqlancer"
+            ], docker_log)
         script_log.info("SQLancer image built: sqlancer:latest")
         return
 
@@ -19,8 +33,22 @@ def build_sqlancer_image(script_log, docker_log, force_rebuild=False):
     if "sqlancer:latest" in images:
         script_log.info("SQLancer image exists: sqlancer:latest")
     else:
-        script_log.info("Building SQLancer image from cache: sqlancer:latest...")
-        run_command(["docker", "build", "-t", "sqlancer:latest", "./sqlancer"], docker_log)
+        if version:
+            script_log.info(
+                "Building SQLancer image from cache: sqlancer:latest (DUCKDB_JDBC_VERSION=%s) ...",
+                version
+            )
+            run_command([
+                "docker", "build",
+                "--build-arg", f"DUCKDB_JDBC_VERSION={version}",
+                "-t", "sqlancer:latest", "./sqlancer"
+            ], docker_log)
+        else:
+            script_log.info("Building SQLancer image from cache: sqlancer:latest ...")
+            run_command([
+                "docker", "build",
+                "-t", "sqlancer:latest", "./sqlancer"
+            ], docker_log)
         script_log.info("SQLancer image built: sqlancer:latest")
 
 def build_network(script_log, docker_log, network_name="sqlancer-net"):
@@ -61,7 +89,7 @@ def build_db_image(cfg, use_cache, script_log, docker_log, custom=False, dockerf
 def build_environment(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
     script_log.info("==============================Building environment==============================")
     build_network(script_log, docker_log)
-    build_sqlancer_image(script_log, docker_log, force_rebuild=False)
+    build_sqlancer_image(script_log, docker_log, not use_cache, cfg.get("version"))
     if cfg["embedded"] == "no":
         build_db_image(cfg, use_cache, script_log, docker_log, custom, dockerfile_path)
     script_log.info("==============================Building environment==============================")
