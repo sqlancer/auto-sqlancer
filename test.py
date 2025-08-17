@@ -25,7 +25,7 @@ def start_db_container(dbms, cfg, script_log, docker_log):
         sys.exit(1)
     else:
         image = f"{image_name}:{tag}"
-        
+
     container_name = cfg.get("container_name", f"{dbms}-sqlancer")
     env_dict = cfg.get("env", {})
     startup_cmd = cfg.get("startup_cmd", [])
@@ -121,6 +121,7 @@ def test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache=Fa
 
     if cfg["embedded"] == "no":
         remove_container(cfg["container_name"], script_log, docker_log)
+    remove_images(script_log, docker_log)
     script_log.info("==============================Executing test==============================")
 
 def remove_container(container_name, script_log, docker_log):
@@ -131,6 +132,13 @@ def remove_container(container_name, script_log, docker_log):
     except subprocess.CalledProcessError as e:
         script_log.warning("Container removing failed: %s", container_name)
 
+def remove_images(script_log, docker_log):
+    script_log.info("Removing outdated images...")
+    try:
+        run_command(["docker", "image", "prune", "-f"], docker_log)
+        script_log.info("Images removed")
+    except subprocess.CalledProcessError as e:
+        script_log.warning("Images removing failed")
 
 def test_custom_dockerfile(dockerfile_path, cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache=False):
     script_log.info("==============================Executing test==============================")
@@ -153,5 +161,6 @@ def test_custom_dockerfile(dockerfile_path, cfg, script_log, docker_log, sqlance
     )
 
     remove_container(cfg["container_name"], script_log, docker_log)
+    remove_images(script_log, docker_log)
     script_log.info("==============================Executing test==============================")
 
