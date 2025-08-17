@@ -61,7 +61,7 @@ def build_db_image(cfg, use_cache, script_log, docker_log, custom=False, dockerf
 def build_environment(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
     script_log.info("==============================Building environment==============================")
     build_network(script_log, docker_log)
-    build_sqlancer_image(script_log, docker_log, force_rebuild=not use_cache)
+    build_sqlancer_image(script_log, docker_log, force_rebuild=False)
     if cfg["embedded"] == "no":
         build_db_image(cfg, use_cache, script_log, docker_log, custom, dockerfile_path)
     script_log.info("==============================Building environment==============================")

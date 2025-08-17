@@ -16,4 +16,3 @@ RUN chmod +x /root/entrypoint.sh
 
 CMD ["/root/entrypoint.sh"]
 
-

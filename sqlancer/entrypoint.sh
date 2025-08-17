@@ -18,12 +18,22 @@ for i in {1..60}; do
   sleep 1
 done
 
-CMD="java -jar sqlancer-*.jar --num-threads \"$SQLANCER_THREADS\" --timeout-seconds \"$SQLANCER_TIMEOUT\" --username \"$SQLANCER_USERNAME\" --password \"$SQLANCER_PASSWORD\" --host \"$SQLANCER_HOST\" \"$SQLANCER_DBMS\" --oracle \"$SQLANCER_ORACLE\""
 
-# Show command to console + log file
+CMD="java -jar sqlancer-*.jar --num-threads \"$SQLANCER_THREADS\" --timeout-seconds \"$SQLANCER_TIMEOUT\" --host \"$SQLANCER_HOST\" \"$SQLANCER_DBMS\" --oracle \"$SQLANCER_ORACLE\""
+
+
+if [ "$(printf '%s' "${SQLANCER_USERNAME:-}" | tr '[:lower:]' '[:upper:]')" != "N/A" ]; then
+  CMD="$CMD --username \"$SQLANCER_USERNAME\""
+fi
+
+
+if [ "$(printf '%s' "${SQLANCER_PASSWORD:-}" | tr '[:lower:]' '[:upper:]')" != "N/A" ]; then
+  CMD="$CMD --password \"$SQLANCER_PASSWORD\""
+fi
+
+
 echo "Running: $CMD" | tee -a "$LOG_FILE"
 
-# Run command: log everything, show only stats to console
 eval "$CMD" 2>&1 | tee -a "$LOG_FILE" | grep --line-buffered "Executed"
 
 echo "[INFO] SQLancer finished. Logs saved to $LOG_DIR"
