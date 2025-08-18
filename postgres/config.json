@@ -1,7 +1,8 @@
 {
     "embedded": "no",
     "dbms": "postgres",
-    "image": "postgres:13",
+    "image_name": "postgres",
+    "tag": "13",
     "container_name": "postgres-sqlancer",
     "port": 5432,
     "env": {
