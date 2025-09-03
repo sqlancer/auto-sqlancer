@@ -1,6 +1,7 @@
 {
     "embedded": "yes",
     "dbms": "duckdb",
+    "version": "1.2.2.0",
     "username": "N/A",
     "password": "N/A",
     "container_name": "localhost",
