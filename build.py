@@ -12,7 +12,7 @@ def build_sqlancer_image(script_log, docker_log, embedded, dbms, force_rebuild=F
         script_log.info("Embedded mode: rebuilding SQLancer image unconditionally ...")
         run_command(
             ["docker", "build", "--no-cache", "-f", dockerfile_path, "-t", "sqlancer:latest", context_dir],
-            docker_log
+             docker_log
         )
         script_log.info("SQLancer image built: sqlancer:latest")
         return
@@ -22,22 +22,11 @@ def build_sqlancer_image(script_log, docker_log, embedded, dbms, force_rebuild=F
         script_log.info(f"Using default SQLancer Dockerfile: {dockerfile_path}")
 
     if force_rebuild:
-        if version:
-            script_log.info(
-                "Rebuilding SQLancer image: sqlancer:latest (DUCKDB_JDBC_VERSION=%s) ...",
-                version
-            )
-            run_command([
-                "docker", "build", "--no-cache",
-                "--build-arg", f"DUCKDB_JDBC_VERSION={version}",
-                "-t", "sqlancer:latest", "./sqlancer"
-            ], docker_log)
-        else:
-            script_log.info("Rebuilding SQLancer image: sqlancer:latest ...")
-            run_command([
-                "docker", "build", "--no-cache",
-                "-t", "sqlancer:latest", "./sqlancer"
-            ], docker_log)
+        script_log.info("Rebuilding SQLancer image: sqlancer:latest ...")
+         run_command(
+            ["docker", "build", "--no-cache", "-f", dockerfile_path, "-t", "sqlancer:latest", context_dir],
+            docker_log
+        )
         script_log.info("SQLancer image built: sqlancer:latest")
         return
 
@@ -55,6 +44,7 @@ def build_sqlancer_image(script_log, docker_log, embedded, dbms, force_rebuild=F
             docker_log
         )
         script_log.info("SQLancer image built: sqlancer:latest")
+
 
 
 
