@@ -1,5 +1,5 @@
 {
-  "dbms_list": ["mysql", "postgres", "sqlite", "tidb", "cockroachdb"],
+  "dbms_list": ["mysql", "postgres", "sqlite", "tidb", "cockroachdb", "duckdb"],
   "dbms": "mysql",
   "container_name": "mysql-custom",
   "image": "mysql-custom",

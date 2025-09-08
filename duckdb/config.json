@@ -1,0 +1,10 @@
+{
+  "embedded": "yes",
+  "dbms": "duckdb",
+  "username": "N/A",
+  "password": "N/A",
+  "container_name": "localhost",
+  "oracle": "NoREC",
+  "num_threads": 4,
+  "timeout_seconds": 60
+}
