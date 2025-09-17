@@ -30,7 +30,7 @@ jobs:
 
       - name: Build DBMS images
         run: python3 start.py build --dbms all 
-  test-all:
+  test-dbs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -50,5 +50,20 @@ jobs:
       - name: Set up Docker
         run: docker --version
 
-      - name: Test all DBMSs
-        run: python3 start.py test --dbms all 
+      - name: Test mysql
+        run: python3 start.py test --dbms mysql --config mysql/config.json
+
+      - name: Test postgres
+        run: python3 start.py test --dbms postgres --config postgres/config.json
+      
+      - name: Test sqlite
+        run: python3 start.py test --dbms sqlite --config sqlite/config.json
+      
+      - name: Test tidb
+        run: python3 start.py test --dbms tidb --config tidb/config.json 
+      
+      - name: Test cockroachdb
+        run: python3 start.py test --dbms cockroachdb --config cockroachdb/config.json
+      
+      - name: Test duckdb
+        run: python3 start.py test --dbms duckdb --config duckdb/config.json

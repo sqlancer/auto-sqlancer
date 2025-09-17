@@ -32,7 +32,6 @@ if [ "$(printf '%s' "${SQLANCER_PASSWORD:-}" | tr '[:lower:]' '[:upper:]')" != "
 fi
 
 
-# 3) 最后统一追加 host、DBMS、oracle
 CMD="$CMD --host \"$SQLANCER_HOST\" \"$SQLANCER_DBMS\" --oracle \"$SQLANCER_ORACLE\""
 
 
