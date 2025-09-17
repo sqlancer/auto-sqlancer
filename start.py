@@ -52,14 +52,14 @@ def main():
                     # print(f"[WARNING] Skipping {dbms}, missing config file.")
                     continue
                 cfg = load_json(config_path)
-                build_environment(cfg, use_cache, script_log, docker_log)
+                build_environment(cfg, use_cache, script_log, docker_log, dbms)
                 test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
 
         elif args.dbms:
             if not args.config:
                 parser.error("Single DBMS test requires --config")
             cfg = load_json(args.config)
-            build_environment(cfg, use_cache, script_log, docker_log)
+            build_environment(cfg, use_cache, script_log, docker_log, args.dbms)
             test_single(cfg, script_log, docker_log, sqlancer_log, run_dir, use_cache)
         else:
             parser.error("Must specify either --dbms or --dockerfile")
@@ -73,7 +73,7 @@ def main():
                 if not os.path.exists(config_path):
                     # print(f"[WARNING] Skipping {dbms}, missing config file.")
                     continue
-                cfg = load_json(config_path)
+                cfg = load_json(config_path)    
                 build_db_image(cfg, use_cache, script_log, docker_log)
         elif args.dbms:
             config_path = os.path.join(args.dbms, "config.json")

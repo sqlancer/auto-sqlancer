@@ -19,17 +19,20 @@ for i in {1..60}; do
 done
 
 
-CMD="java -jar sqlancer-*.jar --num-threads \"$SQLANCER_THREADS\" --timeout-seconds \"$SQLANCER_TIMEOUT\" --host \"$SQLANCER_HOST\" \"$SQLANCER_DBMS\" --oracle \"$SQLANCER_ORACLE\""
-
+CMD="java -jar sqlancer-*.jar \
+  --num-threads \"$SQLANCER_THREADS\" \
+  --timeout-seconds \"$SQLANCER_TIMEOUT\""
 
 if [ "$(printf '%s' "${SQLANCER_USERNAME:-}" | tr '[:lower:]' '[:upper:]')" != "N/A" ]; then
   CMD="$CMD --username \"$SQLANCER_USERNAME\""
 fi
 
-
 if [ "$(printf '%s' "${SQLANCER_PASSWORD:-}" | tr '[:lower:]' '[:upper:]')" != "N/A" ]; then
   CMD="$CMD --password \"$SQLANCER_PASSWORD\""
 fi
+
+
+CMD="$CMD --host \"$SQLANCER_HOST\" \"$SQLANCER_DBMS\" --oracle \"$SQLANCER_ORACLE\""
 
 
 echo "Running: $CMD" | tee -a "$LOG_FILE"

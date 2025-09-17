@@ -4,7 +4,7 @@ import subprocess
 import logging
 from utils import run_command
 
-def build_sqlancer_image(script_log, docker_log, embedded, dbms, force_rebuild=False):
+def build_sqlancer_image(script_log, docker_log, embedded, dbms='mysql', force_rebuild=False):
     context_dir = "./sqlancer"
     if embedded == "yes":
         dockerfile_path = f"./{dbms}/Dockerfile"
@@ -23,7 +23,7 @@ def build_sqlancer_image(script_log, docker_log, embedded, dbms, force_rebuild=F
 
     if force_rebuild:
         script_log.info("Rebuilding SQLancer image: sqlancer:latest ...")
-         run_command(
+        run_command(
             ["docker", "build", "--no-cache", "-f", dockerfile_path, "-t", "sqlancer:latest", context_dir],
             docker_log
         )
@@ -68,27 +68,28 @@ def build_network(script_log, docker_log, network_name="sqlancer-net"):
         sys.exit(1)
 
 def build_db_image(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
-    image = f"{cfg['image_name']}:{cfg['tag']}"
+    if cfg["embedded"] == "no":
+        image = f"{cfg['image_name']}:{cfg['tag']}"
 
-    if not use_cache and not custom:
-        script_log.info("Pulling db image: %s ...", image)
-        run_command(["docker", "pull", image], docker_log)
-        script_log.info("DB image pulled: %s", image)
-    elif custom:
-        build_cmd = ["docker", "build", "-t", image, os.path.dirname(dockerfile_path)]
-        if not use_cache:
-            build_cmd.insert(2, "--no-cache")
-        script_log.info("Building db image: %s ...", image)
-        run_command(build_cmd, docker_log)
-        script_log.info("DB image built: %s ...", image)
-    else:
-        script_log.info("DB image already exists: %s", image)
+        if not use_cache and not custom:
+            script_log.info("Pulling db image: %s ...", image)
+            run_command(["docker", "pull", image], docker_log)
+            script_log.info("DB image pulled: %s", image)
+        elif custom:
+            build_cmd = ["docker", "build", "-t", image, os.path.dirname(dockerfile_path)]
+            if not use_cache:
+                build_cmd.insert(2, "--no-cache")
+            script_log.info("Building db image: %s ...", image)
+            run_command(build_cmd, docker_log)
+            script_log.info("DB image built: %s ...", image)
+        else:
+            script_log.info("DB image already exists: %s", image)
 
 
-def build_environment(cfg, use_cache, script_log, docker_log, custom=False, dockerfile_path=""):
+def build_environment(cfg, use_cache, script_log, docker_log, dbms='mysql', custom=False, dockerfile_path=""):
     script_log.info("==============================Building environment==============================")
     build_network(script_log, docker_log)
-    build_sqlancer_image(script_log, docker_log, cfg["embedded"], cfg["dbms"], force_rebuild=False)
+    build_sqlancer_image(script_log, docker_log, cfg["embedded"], dbms, force_rebuild=False)
     if cfg["embedded"] == "no":
         build_db_image(cfg, use_cache, script_log, docker_log, custom, dockerfile_path)
     script_log.info("==============================Building environment==============================")
